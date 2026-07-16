@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kesir Hesap Makinesi</title>
+<meta name="theme-color" content="#e12e2e">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --red:#e12e2e;
+    --red-dark:#b91f1f;
+    --red-tint:#fdecec;
+    --red-tint-2:#fff5f5;
+    --ink:#181a1f;
+    --ink-soft:#5c626d;
+    --ink-faint:#9aa0ab;
+    --paper:#ffffff;
+    --paper-soft:#f6f7f9;
+    --border:#e7e8ec;
+    --green:#1a8a4c;
+    --green-tint:#eafaf1;
+    --radius:16px;
+    --shadow: 0 1px 2px rgba(20,20,25,.04), 0 10px 30px -12px rgba(20,20,25,.12);
+    --font-display:'Space Grotesk', system-ui, sans-serif;
+    --font-body:'Inter', system-ui, sans-serif;
+    --font-mono:'JetBrains Mono', ui-monospace, monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:var(--font-body);
+    color:var(--ink);
+    background:transparent;
+    -webkit-font-smoothing:antialiased;
+    padding:14px;
+  }
+  .fc-widget{
+    max-width:640px;
+    margin:0 auto;
+    background:var(--paper);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  /* Header */
+  .fc-head{
+    padding:20px 22px 16px;
+    background:
+      radial-gradient(120% 140% at 100% 0%, var(--red-tint) 0%, transparent 55%),
+      var(--paper);
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:12px;
+  }
+  .fc-mark{
+    width:40px;height:40px;flex:0 0 auto;border-radius:11px;
+    background:var(--red);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 6px 14px -6px rgba(225,46,46,.55);
+  }
+  .fc-mark svg{display:block;}
+  .fc-head h1{
+    font-family:var(--font-display);
+    font-size:19px;
+    font-weight:700;
+    margin:0;
+    letter-spacing:-.01em;
+  }
+  .fc-head p{
+    margin:2px 0 0;
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+
+  /* Tabs */
+  .fc-tabs{
+    display:flex;
+    gap:4px;
+    padding:12px 22px 0;
+    background:var(--paper);
+  }
+  .fc-tab{
+    appearance:none;border:none;background:transparent;cursor:pointer;
+    font-family:var(--font-body);
+    font-size:13.5px;font-weight:600;color:var(--ink-soft);
+    padding:9px 4px 12px;
+    border-bottom:2.5px solid transparent;
+    transition:color .15s ease, border-color .15s ease;
+    flex:1;
+    text-align:center;
+  }
+  .fc-tab:hover{color:var(--ink);}
+  .fc-tab.active{color:var(--red);border-color:var(--red);}
+
+  .fc-body{padding:22px;}
+  .fc-panel{display:none;}
+  .fc-panel.active{display:block; animation:fcFade .25s ease;}
+  @keyframes fcFade{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);}}
+
+  /* Equation row */
+  .fc-eqn{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:10px;
+    background:var(--paper-soft);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:20px 14px;
+  }
+  .fc-frac-block{
+    display:flex;align-items:center;gap:6px;
+  }
+  .fc-whole-input{
+    width:42px;height:52px;
+    border:1.5px solid var(--border);
+    border-radius:10px;
+    text-align:center;
+    font-family:var(--font-mono);
+    font-size:17px;font-weight:700;
+    color:var(--ink);
+    background:var(--paper);
+  }
+  .fc-frac{
+    display:flex;flex-direction:column;align-items:stretch;
+    width:62px;
+  }
+  .fc-frac input{
+    width:100%;
+    border:1.5px solid var(--border);
+    background:var(--paper);
+    text-align:center;
+    font-family:var(--font-mono);
+    font-weight:700;
+    font-size:15px;
+    color:var(--ink);
+    padding:6px 2px;
+  }
+  .fc-frac input:first-child{border-radius:10px 10px 0 0; border-bottom:none;}
+  .fc-frac input:last-child{border-radius:0 0 10px 10px;}
+  .fc-frac .fc-bar{height:2px; background:var(--ink); margin:0 4px; flex:0 0 auto;}
+  input:focus{outline:none; border-color:var(--red) !important; box-shadow:0 0 0 3px var(--red-tint);}
+
+  .fc-op-select{
+    appearance:none;
+    width:44px;height:44px;
+    border-radius:50%;
+    border:1.5px solid var(--border);
+    background:var(--paper);
+    color:var(--red);
+    font-family:var(--font-mono);
+    font-size:18px;font-weight:700;
+    text-align:center;
+    cursor:pointer;
+    text-align-last:center;
+  }
+
+  .fc-remove{
+    width:22px;height:22px;border-radius:50%;
+    border:none;background:transparent;color:var(--ink-faint);
+    cursor:pointer;font-size:15px;line-height:1;
+    display:flex;align-items:center;justify-content:center;
+    margin-left:-2px;
+  }
+  .fc-remove:hover{color:var(--red); background:var(--red-tint);}
+
+  .fc-row-tools{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-top:14px;
+  }
+  .fc-add-btn{
+    appearance:none;border:1.5px dashed var(--border);background:transparent;
+    color:var(--ink-soft);
+    font-family:var(--font-body);font-weight:600;font-size:13px;
+    padding:7px 12px;border-radius:9px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;
+    transition:.15s ease;
+  }
+  .fc-add-btn:hover{border-color:var(--red); color:var(--red); background:var(--red-tint-2);}
+  .fc-add-btn:disabled{opacity:.4; cursor:not-allowed;}
+  .fc-hint{font-size:12px; color:var(--ink-faint);}
+
+  .fc-calc-btn{
+    width:100%;
+    margin-top:16px;
+    appearance:none;border:none;
+    background:var(--red);
+    color:#fff;
+    font-family:var(--font-body);
+    font-weight:700;font-size:15px;
+    padding:14px;border-radius:12px;
+    cursor:pointer;
+    transition:background .15s ease, transform .1s ease;
+  }
+  .fc-calc-btn:hover{background:var(--red-dark);}
+  .fc-calc-btn:active{transform:scale(.99);}
+
+  /* Result */
+  .fc-result{
+    display:none;
+    margin-top:18px;
+    border-radius:14px;
+    border:1px solid #d7ecdf;
+    background:var(--green-tint);
+    padding:18px;
+    animation:fcFade .3s ease;
+  }
+  .fc-result.show{display:block;}
+  .fc-result-label{
+    font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--green); margin-bottom:10px;
+  }
+  .fc-result-main{
+    display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  }
+  .fc-result-frac{
+    display:flex;align-items:center;gap:4px;
+    font-family:var(--font-mono);font-weight:700;font-size:26px;color:var(--ink);
+  }
+  .fc-result-frac .fc-static-frac{display:flex;flex-direction:column;align-items:center;line-height:1.15;}
+  .fc-result-frac .fc-static-frac .fc-bar{width:100%;height:2.5px;background:var(--ink);margin:2px 0;}
+  .fc-result-sub{
+    font-family:var(--font-body); font-size:13px; color:var(--ink-soft);
+    display:flex; flex-direction:column; gap:2px;
+  }
+  .fc-result-sub b{color:var(--ink); font-family:var(--font-mono); font-weight:700;}
+
+  .fc-steps-toggle{
+    margin-top:14px;
+    background:none;border:none;cursor:pointer;
+    color:var(--red); font-weight:600; font-size:13px;
+    padding:0; display:flex; align-items:center; gap:5px;
+  }
+  .fc-steps{
+    display:none;
+    margin-top:10px;
+    padding-top:12px;
+    border-top:1px dashed #d7ecdf;
+    font-family:var(--font-mono);
+    font-size:13.5px;
+    color:var(--ink-soft);
+    line-height:2.1;
+  }
+  .fc-steps.show{display:block;}
+
+  /* Simplify + convert panels */
+  .fc-simple-row{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;}
+  .fc-arrow{color:var(--ink-faint); font-size:20px;}
+
+  .fc-toggle-pair{
+    display:inline-flex; background:var(--paper-soft); border:1px solid var(--border);
+    border-radius:10px; padding:3px; margin-bottom:16px;
+  }
+  .fc-toggle-pair button{
+    appearance:none;border:none;background:transparent;cursor:pointer;
+    font-family:var(--font-body); font-weight:600; font-size:13px; color:var(--ink-soft);
+    padding:8px 14px; border-radius:8px; transition:.15s ease;
+  }
+  .fc-toggle-pair button.active{background:var(--red); color:#fff;}
+
+  .fc-single-field{
+    width:100%; text-align:center;
+    border:1.5px solid var(--border); border-radius:12px;
+    padding:14px; font-family:var(--font-mono); font-size:20px; font-weight:700;
+    background:var(--paper); color:var(--ink);
+  }
+
+  .fc-error{
+    display:none;
+    margin-top:14px; padding:12px 14px; border-radius:10px;
+    background:var(--red-tint); color:var(--red-dark);
+    font-size:13px; font-weight:600;
+  }
+  .fc-error.show{display:block;}
+
+  .fc-footer{
+    padding:12px 22px 18px; text-align:center;
+  }
+  .fc-footer a{
+    font-size:11.5px; color:var(--ink-faint); text-decoration:none;
+  }
+  .fc-footer a:hover{color:var(--red);}
+
+  @media (max-width:420px){
+    .fc-eqn{padding:16px 8px;gap:6px;}
+    .fc-frac{width:50px;}
+    .fc-whole-input{width:34px;height:46px;font-size:15px;}
+    .fc-result-frac{font-size:22px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="fc-widget">
+
+  <div class="fc-head">
+    <div class="fc-mark">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <text x="3" y="10" font-family="JetBrains Mono, monospace" font-size="9" font-weight="700" fill="#fff">1</text>
+        <line x1="2" y1="13" x2="16" y2="13" stroke="#fff" stroke-width="1.6"/>
+        <text x="7" y="22" font-family="JetBrains Mono, monospace" font-size="9" font-weight="700" fill="#fff">2</text>
+      </svg>
+    </div>
+    <div>
+      <h1>Kesir Hesap Makinesi</h1>
+      <p>Toplama, çıkarma, çarpma, bölme, sadeleştirme ve dönüştürme</p>
+    </div>
+  </div>
+
+  <div class="fc-tabs">
+    <button class="fc-tab active" data-panel="calc">Hesaplama</button>
+    <button class="fc-tab" data-panel="simplify">Sadeleştirme</button>
+    <button class="fc-tab" data-panel="convert">Dönüştürme</button>
+  </div>
+
+  <div class="fc-body">
+
+    <!-- ================= CALCULATE ================= -->
+    <div class="fc-panel active" id="panel-calc">
+      <div class="fc-eqn" id="eqnRow"></div>
+
+      <div class="fc-row-tools">
+        <button class="fc-add-btn" id="addFracBtn" type="button">
+          <span style="font-size:15px;line-height:1;">+</span> Kesir ekle
+        </button>
+        <span class="fc-hint">Soldan sağa işlenir · en fazla 4 kesir</span>
+      </div>
+
+      <button class="fc-calc-btn" id="calcBtn" type="button">Hesapla</button>
+      <div class="fc-error" id="calcError"></div>
+
+      <div class="fc-result" id="calcResult">
+        <div class="fc-result-label">Sonuç</div>
+        <div class="fc-result-main">
+          <div class="fc-result-frac" id="resultFracBox"></div>
+          <div class="fc-result-sub">
+            <div>Karışık sayı: <b id="resultMixed">—</b></div>
+            <div>Ondalık: <b id="resultDecimal">—</b></div>
+          </div>
+        </div>
+        <button class="fc-steps-toggle" id="stepsToggle" type="button">
+          <span id="stepsArrow">▾</span> Çözüm adımlarını göster
+        </button>
+        <div class="fc-steps" id="stepsBox"></div>
+      </div>
+    </div>
+
+    <!-- ================= SIMPLIFY ================= -->
+    <div class="fc-panel" id="panel-simplify">
+      <div class="fc-simple-row">
+        <div class="fc-frac-block">
+          <div class="fc-frac">
+            <input type="number" id="simpN" value="12" aria-label="pay">
+            <div class="fc-bar"></div>
+            <input type="number" id="simpD" value="18" aria-label="payda">
+          </div>
+        </div>
+        <span class="fc-arrow">→</span>
+        <div class="fc-result-frac" id="simpResultBox" style="font-size:26px;">?/?</div>
+      </div>
+      <button class="fc-calc-btn" id="simplifyBtn" type="button" style="margin-top:20px;">Sadeleştir</button>
+      <div class="fc-error" id="simpError"></div>
+      <div class="fc-result" id="simpResult">
+        <div class="fc-result-label">Sonuç</div>
+        <div class="fc-result-sub">
+          <div>Ortak Bölen (OBEB): <b id="simpGcd">—</b></div>
+          <div>Ondalık karşılığı: <b id="simpDecimal">—</b></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= CONVERT ================= -->
+    <div class="fc-panel" id="panel-convert">
+      <div class="fc-toggle-pair" id="convToggle">
+        <button class="active" data-mode="d2f" type="button">Ondalık → Kesir</button>
+        <button data-mode="f2d" type="button">Kesir → Ondalık</button>
+      </div>
+
+      <div id="convD2F">
+        <input class="fc-single-field" id="decInput" type="text" inputmode="decimal" value="0.75" placeholder="örn. 0.75">
+      </div>
+      <div id="convF2D" style="display:none;">
+        <div class="fc-eqn" style="justify-content:center;">
+          <div class="fc-frac" style="width:70px;">
+            <input type="number" id="convN" value="3" aria-label="pay">
+            <div class="fc-bar"></div>
+            <input type="number" id="convD" value="4" aria-label="payda">
+          </div>
+        </div>
+      </div>
+
+      <button class="fc-calc-btn" id="convertBtn" type="button" style="margin-top:16px;">Dönüştür</button>
+      <div class="fc-error" id="convError"></div>
+
+      <div class="fc-result" id="convResult">
+        <div class="fc-result-label">Sonuç</div>
+        <div class="fc-result-main">
+          <div class="fc-result-frac" id="convResultBox"></div>
+        </div>
+        <div class="fc-result-sub" style="margin-top:8px;" id="convNote"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="fc-footer">
+    <a href="https://teknobird.com" target="_top">teknobird.com</a>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- core fraction math ---------- */
+  function gcd(a,b){ a=Math.abs(a); b=Math.abs(b); while(b){ [a,b]=[b,a%b]; } return a||1; }
+
+  function reduce(f){
+    const g = gcd(f.n, f.d);
+    let n = f.n/g, d = f.d/g;
+    if (d<0){ d=-d; n=-n; }
+    return {n,d};
+  }
+
+  function toImproper(whole, n, d){
+    whole = whole||0; n = Math.abs(n||0);
+    const sign = whole < 0 ? -1 : 1;
+    return { n: sign*(Math.abs(whole)*d + n), d };
+  }
+
+  function opFrac(a,b,operator){
+    let r;
+    if (operator === '+') r = { n: a.n*b.d + b.n*a.d, d: a.d*b.d };
+    else if (operator === '-') r = { n: a.n*b.d - b.n*a.d, d: a.d*b.d };
+    else if (operator === '×') r = { n: a.n*b.n, d: a.d*b.d };
+    else if (operator === '÷') r = { n: a.n*b.d, d: a.d*b.n };
+    return reduce(r);
+  }
+
+  function toMixedString(f){
+    const whole = Math.trunc(f.n/f.d);
+    const rem = Math.abs(f.n - whole*f.d);
+    if (rem === 0) return String(whole);
+    if (whole === 0) return (f.n<0 && whole===0 ? '-' : '') + rem + '/' + f.d;
+    return whole + ' ' + rem + '/' + f.d;
+  }
+
+  function fracHTML(f, big){
+    return '<div class="fc-static-frac"><span>'+f.n+'</span><span class="fc-bar"></span><span>'+f.d+'</span></div>';
+  }
+
+  function isTerminating(d){
+    d = Math.abs(d);
+    while (d % 2 === 0) d/=2;
+    while (d % 5 === 0) d/=5;
+    return d === 1;
+  }
+
+  function toDecimalString(f){
+    if (f.d === 0) return '—';
+    const val = f.n / f.d;
+    if (isTerminating(f.d)){
+      // exact terminating decimal
+      let s = val.toString();
+      return s;
+    }
+    return val.toFixed(6).replace(/0+$/,'').replace(/\.$/,'') + '…';
+  }
+
+  /* ================= CALCULATE PANEL ================= */
+  const eqnRow = document.getElementById('eqnRow');
+  const MAX_FRACS = 4;
+  let fracCount = 0;
+
+  function opCircleHTML(idx){
+    return '<select class="fc-op-select" data-op="'+idx+'" aria-label="işlem">'+
+      '<option value="+">+</option>'+
+      '<option value="-">−</option>'+
+      '<option value="×">×</option>'+
+      '<option value="÷">÷</option>'+
+      '</select>';
+  }
+
+  function fracBlockHTML(idx, whole, n, d){
+    return '<div class="fc-frac-block" data-idx="'+idx+'">'+
+      '<input class="fc-whole-input" type="number" data-role="whole" value="'+whole+'" aria-label="tam sayı" placeholder="0">'+
+      '<div class="fc-frac">'+
+        '<input type="number" data-role="n" value="'+n+'" aria-label="pay">'+
+        '<div class="fc-bar"></div>'+
+        '<input type="number" data-role="d" value="'+d+'" aria-label="payda">'+
+      '</div>'+
+      (idx>1 ? '<button class="fc-remove" data-remove="'+idx+'" type="button" title="Kaldır">✕</button>' : '')+
+    '</div>';
+  }
+
+  function buildInitialRow(){
+    eqnRow.innerHTML =
+      fracBlockHTML(1, 0, 2, 3) +
+      opCircleHTML(1) +
+      fracBlockHTML(2, 0, 1, 4);
+    fracCount = 2;
+    updateAddBtn();
+  }
+
+  function updateAddBtn(){
+    document.getElementById('addFracBtn').disabled = fracCount >= MAX_FRACS;
+  }
+
+  document.getElementById('addFracBtn').addEventListener('click', function(){
+    if (fracCount >= MAX_FRACS) return;
+    fracCount++;
+    eqnRow.insertAdjacentHTML('beforeend', opCircleHTML(fracCount-1) + fracBlockHTML(fracCount, 0, 1, 2));
+    updateAddBtn();
+  });
+
+  eqnRow.addEventListener('click', function(e){
+    const btn = e.target.closest('[data-remove]');
+    if (!btn) return;
+    const idx = btn.getAttribute('data-remove');
+    const block = eqnRow.querySelector('.fc-frac-block[data-idx="'+idx+'"]');
+    const prevOp = block.previousElementSibling;
+    if (prevOp && prevOp.classList.contains('fc-op-select')) prevOp.remove();
+    block.remove();
+    fracCount--;
+    updateAddBtn();
+  });
+
+  function readFractions(){
+    const blocks = [...eqnRow.querySelectorAll('.fc-frac-block')];
+    const ops = [...eqnRow.querySelectorAll('.fc-op-select')].map(s=>s.value);
+    const fracs = blocks.map(b=>{
+      const whole = parseInt(b.querySelector('[data-role="whole"]').value, 10) || 0;
+      const n = parseInt(b.querySelector('[data-role="n"]').value, 10);
+      const d = parseInt(b.querySelector('[data-role="d"]').value, 10);
+      return { whole, n: isNaN(n)?0:n, d: isNaN(d)?NaN:d };
+    });
+    return { fracs, ops };
+  }
+
+  function showError(el, msg){
+    el.textContent = msg; el.classList.add('show');
+  }
+  function hideError(el){ el.classList.remove('show'); }
+
+  document.getElementById('calcBtn').addEventListener('click', function(){
+    const errEl = document.getElementById('calcError');
+    const resEl = document.getElementById('calcResult');
+    hideError(errEl); resEl.classList.remove('show');
+
+    const { fracs, ops } = readFractions();
+    if (fracs.some(f => !f.d)){
+      showError(errEl, 'Payda sıfır ya da boş olamaz.');
+      return;
+    }
+
+    let steps = [];
+    let acc = toImproper(fracs[0].whole, fracs[0].n, fracs[0].d);
+    let accLabel = toMixedString(acc) === (acc.n+'/'+acc.d) ? (acc.n+'/'+acc.d) : (fracs[0].whole ? fracs[0].whole+' '+fracs[0].n+'/'+fracs[0].d : fracs[0].n+'/'+fracs[0].d);
+
+    for (let i=0; i<ops.length; i++){
+      const next = toImproper(fracs[i+1].whole, fracs[i+1].n, fracs[i+1].d);
+      const before = reduce(acc);
+      acc = opFrac(acc, next, ops[i]);
+      const nextLabel = fracs[i+1].whole ? fracs[i+1].whole+' '+fracs[i+1].n+'/'+fracs[i+1].d : fracs[i+1].n+'/'+fracs[i+1].d;
+      steps.push(before.n+'/'+before.d+' '+ops[i]+' '+next.n+'/'+next.d+' = '+acc.n+'/'+acc.d);
+    }
+
+    const result = reduce(acc);
+    document.getElementById('resultFracBox').innerHTML = fracHTML(result);
+    document.getElementById('resultMixed').textContent = toMixedString(result);
+    document.getElementById('resultDecimal').textContent = toDecimalString(result);
+    document.getElementById('stepsBox').innerHTML = steps.map(s=>'<div>'+s+'</div>').join('');
+    document.getElementById('stepsBox').classList.remove('show');
+    document.getElementById('stepsArrow').textContent = '▾';
+    resEl.classList.add('show');
+  });
+
+  document.getElementById('stepsToggle').addEventListener('click', function(){
+    const box = document.getElementById('stepsBox');
+    const arrow = document.getElementById('stepsArrow');
+    box.classList.toggle('show');
+    arrow.textContent = box.classList.contains('show') ? '▴' : '▾';
+  });
+
+  buildInitialRow();
+
+  /* ================= SIMPLIFY PANEL ================= */
+  document.getElementById('simplifyBtn').addEventListener('click', function(){
+    const errEl = document.getElementById('simpError');
+    const resEl = document.getElementById('simpResult');
+    hideError(errEl); resEl.classList.remove('show');
+
+    const n = parseInt(document.getElementById('simpN').value, 10);
+    const d = parseInt(document.getElementById('simpD').value, 10);
+    if (!d || isNaN(n)){ showError(errEl, 'Lütfen geçerli bir pay ve payda girin.'); return; }
+
+    const g = gcd(n,d);
+    const result = reduce({n,d});
+    document.getElementById('simpResultBox').innerHTML = fracHTML(result);
+    document.getElementById('simpGcd').textContent = g;
+    document.getElementById('simpDecimal').textContent = toDecimalString(result);
+    resEl.classList.add('show');
+  });
+
+  /* ================= CONVERT PANEL ================= */
+  const convToggle = document.getElementById('convToggle');
+  const convD2F = document.getElementById('convD2F');
+  const convF2D = document.getElementById('convF2D');
+  let convMode = 'd2f';
+
+  convToggle.addEventListener('click', function(e){
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    convMode = btn.getAttribute('data-mode');
+    [...convToggle.children].forEach(b=>b.classList.toggle('active', b===btn));
+    convD2F.style.display = convMode === 'd2f' ? 'block' : 'none';
+    convF2D.style.display = convMode === 'f2d' ? 'block' : 'none';
+    document.getElementById('convResult').classList.remove('show');
+    hideError(document.getElementById('convError'));
+  });
+
+  document.getElementById('convertBtn').addEventListener('click', function(){
+    const errEl = document.getElementById('convError');
+    const resEl = document.getElementById('convResult');
+    hideError(errEl); resEl.classList.remove('show');
+
+    if (convMode === 'd2f'){
+      const raw = document.getElementById('decInput').value.trim().replace(',', '.');
+      if (!/^-?\d+(\.\d+)?$/.test(raw)){
+        showError(errEl, 'Lütfen geçerli bir ondalık sayı girin (örn. 0.75).');
+        return;
+      }
+      const neg = raw.startsWith('-');
+      const clean = neg ? raw.slice(1) : raw;
+      const [intPart, decPart=''] = clean.split('.');
+      const d = Math.pow(10, decPart.length);
+      const n = parseInt((intPart||'0')+decPart, 10) || 0;
+      const result = reduce({ n: (neg?-1:1)*n, d });
+      document.getElementById('convResultBox').innerHTML = fracHTML(result);
+      document.getElementById('convNote').innerHTML = 'Karışık sayı: <b>'+toMixedString(result)+'</b>';
+      resEl.classList.add('show');
+    } else {
+      const n = parseInt(document.getElementById('convN').value, 10);
+      const d = parseInt(document.getElementById('convD').value, 10);
+      if (!d || isNaN(n)){ showError(errEl, 'Lütfen geçerli bir pay ve payda girin.'); return; }
+      const dec = toDecimalString(reduce({n,d}));
+      document.getElementById('convResultBox').innerHTML = '<span style="font-size:26px;">'+dec+'</span>';
+      document.getElementById('convNote').innerHTML = isTerminating(d) ? 'Bu kesir tam ondalık sayıya karşılık gelir.' : 'Bu kesir sonsuz/tekrarlayan ondalık bir sayıdır, yaklaşık değer gösterildi.';
+      resEl.classList.add('show');
+    }
+  });
+
+  /* ================= TABS ================= */
+  document.querySelectorAll('.fc-tab').forEach(tab=>{
+    tab.addEventListener('click', function(){
+      document.querySelectorAll('.fc-tab').forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('.fc-panel').forEach(p=>p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-'+tab.getAttribute('data-panel')).classList.add('active');
+    });
+  });
+
+})();
+</script>
+</body>
+</html>
