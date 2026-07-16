@@ -454,7 +454,7 @@
     return '<div class="fc-static-frac"><span>'+f.n+'</span><span class="fc-bar"></span><span>'+f.d+'</span></div>';
   }
 
-  // Exact terminating decimal check
+  // Kesrin ondalık karşılığını hesaplar
   function isTerminating(d){
     d = Math.abs(d);
     while (d % 2 === 0) d/=2;
@@ -470,6 +470,16 @@
       return s;
     }
     return val.toFixed(6).replace(/0+$/,'').replace(/\.$/,'') + '…';
+  }
+
+  /* ================= OTOMATİK ODAKLANMA / KAYDIRMA YARDIMCISI ================= */
+  // Sonuç kutusu açıldığında sayfayı yumuşak bir şekilde aşağı kaydırır.
+  function scrollToElement(el) {
+    setTimeout(() => {
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }, 150); // Iframe yüksekliğinin güncellenmesini beklemek için kısa bir gecikme
   }
 
   /* ================= CALCULATE PANEL ================= */
@@ -557,6 +567,8 @@
     const { fracs, ops } = readFractions();
     if (fracs.some(f => !f.d)){
       showError(errEl, 'Payda sıfır ya da boş olamaz.');
+      fcSendHeight();
+      scrollToElement(errEl);
       return;
     }
 
@@ -580,7 +592,9 @@
     document.getElementById('stepsBox').classList.remove('show');
     document.getElementById('stepsArrow').textContent = '▾';
     resEl.classList.add('show');
+    
     fcSendHeight();
+    scrollToElement(resEl); // Sonuçlar göründüğünde aşağı kaydır
   });
 
   document.getElementById('stepsToggle').addEventListener('click', function(){
@@ -588,7 +602,11 @@
     const arrow = document.getElementById('stepsArrow');
     box.classList.toggle('show');
     arrow.textContent = box.classList.contains('show') ? '▴' : '▾';
+    
     fcSendHeight();
+    if (box.classList.contains('show')) {
+      scrollToElement(box); // Çözüm adımları açıldığında adımlara kaydır
+    }
   });
 
   buildInitialRow();
@@ -601,7 +619,12 @@
 
     const n = parseInt(document.getElementById('simpN').value, 10);
     const d = parseInt(document.getElementById('simpD').value, 10);
-    if (!d || isNaN(n)){ showError(errEl, 'Lütfen geçerli bir pay ve payda girin.'); return; }
+    if (!d || isNaN(n)){ 
+      showError(errEl, 'Lütfen geçerli bir pay ve payda girin.'); 
+      fcSendHeight();
+      scrollToElement(errEl);
+      return; 
+    }
 
     const g = gcd(n,d);
     const result = reduce({n,d});
@@ -609,7 +632,9 @@
     document.getElementById('simpGcd').textContent = g;
     document.getElementById('simpDecimal').textContent = toDecimalString(result);
     resEl.classList.add('show');
+    
     fcSendHeight();
+    scrollToElement(resEl); // Sonuçlar göründüğünde aşağı kaydır
   });
 
   /* ================= CONVERT PANEL ================= */
@@ -639,6 +664,8 @@
       const raw = document.getElementById('decInput').value.trim().replace(',', '.');
       if (!/^-?\d+(\.\d+)?$/.test(raw)){
         showError(errEl, 'Lütfen geçerli bir ondalık sayı girin (örn. 0.75).');
+        fcSendHeight();
+        scrollToElement(errEl);
         return;
       }
       const neg = raw.startsWith('-');
@@ -650,16 +677,25 @@
       document.getElementById('convResultBox').innerHTML = fracHTML(result);
       document.getElementById('convNote').innerHTML = 'Karışık sayı: <b>'+toMixedString(result)+'</b>';
       resEl.classList.add('show');
+      
       fcSendHeight();
+      scrollToElement(resEl); // Sonuçlar göründüğünde aşağı kaydır
     } else {
       const n = parseInt(document.getElementById('convN').value, 10);
       const d = parseInt(document.getElementById('convD').value, 10);
-      if (!d || isNaN(n)){ showError(errEl, 'Lütfen geçerli bir pay ve payda girin.'); return; }
+      if (!d || isNaN(n)){ 
+        showError(errEl, 'Lütfen geçerli bir pay ve payda girin.'); 
+        fcSendHeight();
+        scrollToElement(errEl);
+        return; 
+      }
       const dec = toDecimalString(reduce({n,d}));
       document.getElementById('convResultBox').innerHTML = '<span style="font-size:26px;">'+dec+'</span>';
       document.getElementById('convNote').innerHTML = isTerminating(d) ? 'Bu kesir tam ondalık sayıya karşılık gelir.' : 'Bu kesir sonsuz/tekrarlayan ondalık bir sayıdır, yaklaşık değer gösterildi.';
       resEl.classList.add('show');
+      
       fcSendHeight();
+      scrollToElement(resEl); // Sonuçlar göründüğünde aşağı kaydır
     }
   });
 
@@ -675,9 +711,6 @@
   });
 
   /* ================= RESPONSIVE IFRAME AUTO-HEIGHT ================= */
-  /* Bu alan senin istediğin 'resize-iframe' mesaj formatıyla güncellendi.
-     Sitenin içindeki dikey kaydırma çubuklarını (scrollbar) zorla gizler
-     ve her içerik büyümesinde yüksekliği WordPress paneline pürüzsüzce aktarır. */
   const widgetEl = document.querySelector('.fc-widget');
   const inIframe = window.self !== window.top;
 
@@ -687,7 +720,7 @@
     // Sayfanın içindeki tüm scrollbar'ları zorla devre dışı bırakır
     document.body.style.overflow = 'hidden';
     
-    // Yüksekliği widget boyutuna göre hesaplayıp ek tolerans payı ekler
+    // Widget boyutunu alıp 15px ekstra tolerans payı ile yüksekliği iletir
     const height = widgetEl ? Math.ceil(widgetEl.getBoundingClientRect().height) : (document.body.scrollHeight || document.documentElement.scrollHeight);
     
     window.parent.postMessage({
