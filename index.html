@@ -454,6 +454,7 @@
     return '<div class="fc-static-frac"><span>'+f.n+'</span><span class="fc-bar"></span><span>'+f.d+'</span></div>';
   }
 
+  // Exact terminating decimal check
   function isTerminating(d){
     d = Math.abs(d);
     while (d % 2 === 0) d/=2;
@@ -465,7 +466,6 @@
     if (f.d === 0) return '—';
     const val = f.n / f.d;
     if (isTerminating(f.d)){
-      // exact terminating decimal
       let s = val.toString();
       return s;
     }
@@ -675,26 +675,37 @@
   });
 
   /* ================= RESPONSIVE IFRAME AUTO-HEIGHT ================= */
-  /* Sekme değişimi, sonuç/adım açılıp kapanması gibi her içerik değişiminde
-     üst sayfaya (iframe'i barındıran sayfaya) gerçek yüksekliği bildirir.
-     ResizeObserver'a EK olarak her etkileşimde doğrudan da tetiklenir; böylece
-     üst sayfada script'i geciktiren eklentiler (ör. Rocket Loader) olsa bile
-     birden çok deneme ile boyut iletilir. */
+  /* Bu alan senin istediğin 'resize-iframe' mesaj formatıyla güncellendi.
+     Sitenin içindeki dikey kaydırma çubuklarını (scrollbar) zorla gizler
+     ve her içerik büyümesinde yüksekliği WordPress paneline pürüzsüzce aktarır. */
   const widgetEl = document.querySelector('.fc-widget');
   const inIframe = window.self !== window.top;
 
   function fcSendHeight(){
-    if (!inIframe || !widgetEl) return;
-    const h = Math.ceil(widgetEl.getBoundingClientRect().height) + 28;
-    window.parent.postMessage({ type: 'fc-kesir-resize', height: h }, '*');
+    if (!inIframe) return;
+    
+    // Sayfanın içindeki tüm scrollbar'ları zorla devre dışı bırakır
+    document.body.style.overflow = 'hidden';
+    
+    // Yüksekliği widget boyutuna göre hesaplayıp ek tolerans payı ekler
+    const height = widgetEl ? Math.ceil(widgetEl.getBoundingClientRect().height) : (document.body.scrollHeight || document.documentElement.scrollHeight);
+    
+    window.parent.postMessage({
+      type: 'resize-iframe',
+      height: height
+    }, '*');
   }
 
-  if (inIframe && widgetEl) {
-    if ('ResizeObserver' in window) {
+  if (inIframe) {
+    if ('ResizeObserver' in window && widgetEl) {
       new ResizeObserver(fcSendHeight).observe(widgetEl);
+    } else {
+      const observer = new MutationObserver(fcSendHeight);
+      observer.observe(document.body, { attributes: true, childList: true, subtree: true });
     }
-    // Ek güvenlik: script erteleyen eklentilere karşı tekrarlı deneme
+    
     window.addEventListener('load', fcSendHeight);
+    window.addEventListener('resize', fcSendHeight);
     [100, 300, 600, 1200, 2000].forEach(ms => setTimeout(fcSendHeight, ms));
     setInterval(fcSendHeight, 1000);
   }
