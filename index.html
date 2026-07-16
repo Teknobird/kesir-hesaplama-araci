@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
 <title>Kesir Hesap Makinesi</title>
 <meta name="theme-color" content="#e12e2e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -515,6 +516,7 @@
     fracCount++;
     eqnRow.insertAdjacentHTML('beforeend', opCircleHTML(fracCount-1) + fracBlockHTML(fracCount, 0, 1, 2));
     updateAddBtn();
+    fcSendHeight();
   });
 
   eqnRow.addEventListener('click', function(e){
@@ -527,6 +529,7 @@
     block.remove();
     fracCount--;
     updateAddBtn();
+    fcSendHeight();
   });
 
   function readFractions(){
@@ -577,6 +580,7 @@
     document.getElementById('stepsBox').classList.remove('show');
     document.getElementById('stepsArrow').textContent = '▾';
     resEl.classList.add('show');
+    fcSendHeight();
   });
 
   document.getElementById('stepsToggle').addEventListener('click', function(){
@@ -584,6 +588,7 @@
     const arrow = document.getElementById('stepsArrow');
     box.classList.toggle('show');
     arrow.textContent = box.classList.contains('show') ? '▴' : '▾';
+    fcSendHeight();
   });
 
   buildInitialRow();
@@ -604,6 +609,7 @@
     document.getElementById('simpGcd').textContent = g;
     document.getElementById('simpDecimal').textContent = toDecimalString(result);
     resEl.classList.add('show');
+    fcSendHeight();
   });
 
   /* ================= CONVERT PANEL ================= */
@@ -621,6 +627,7 @@
     convF2D.style.display = convMode === 'f2d' ? 'block' : 'none';
     document.getElementById('convResult').classList.remove('show');
     hideError(document.getElementById('convError'));
+    fcSendHeight();
   });
 
   document.getElementById('convertBtn').addEventListener('click', function(){
@@ -643,6 +650,7 @@
       document.getElementById('convResultBox').innerHTML = fracHTML(result);
       document.getElementById('convNote').innerHTML = 'Karışık sayı: <b>'+toMixedString(result)+'</b>';
       resEl.classList.add('show');
+      fcSendHeight();
     } else {
       const n = parseInt(document.getElementById('convN').value, 10);
       const d = parseInt(document.getElementById('convD').value, 10);
@@ -651,6 +659,7 @@
       document.getElementById('convResultBox').innerHTML = '<span style="font-size:26px;">'+dec+'</span>';
       document.getElementById('convNote').innerHTML = isTerminating(d) ? 'Bu kesir tam ondalık sayıya karşılık gelir.' : 'Bu kesir sonsuz/tekrarlayan ondalık bir sayıdır, yaklaşık değer gösterildi.';
       resEl.classList.add('show');
+      fcSendHeight();
     }
   });
 
@@ -661,8 +670,34 @@
       document.querySelectorAll('.fc-panel').forEach(p=>p.classList.remove('active'));
       tab.classList.add('active');
       document.getElementById('panel-'+tab.getAttribute('data-panel')).classList.add('active');
+      fcSendHeight();
     });
   });
+
+  /* ================= RESPONSIVE IFRAME AUTO-HEIGHT ================= */
+  /* Sekme değişimi, sonuç/adım açılıp kapanması gibi her içerik değişiminde
+     üst sayfaya (iframe'i barındıran sayfaya) gerçek yüksekliği bildirir.
+     ResizeObserver'a EK olarak her etkileşimde doğrudan da tetiklenir; böylece
+     üst sayfada script'i geciktiren eklentiler (ör. Rocket Loader) olsa bile
+     birden çok deneme ile boyut iletilir. */
+  const widgetEl = document.querySelector('.fc-widget');
+  const inIframe = window.self !== window.top;
+
+  function fcSendHeight(){
+    if (!inIframe || !widgetEl) return;
+    const h = Math.ceil(widgetEl.getBoundingClientRect().height) + 28;
+    window.parent.postMessage({ type: 'fc-kesir-resize', height: h }, '*');
+  }
+
+  if (inIframe && widgetEl) {
+    if ('ResizeObserver' in window) {
+      new ResizeObserver(fcSendHeight).observe(widgetEl);
+    }
+    // Ek güvenlik: script erteleyen eklentilere karşı tekrarlı deneme
+    window.addEventListener('load', fcSendHeight);
+    [100, 300, 600, 1200, 2000].forEach(ms => setTimeout(fcSendHeight, ms));
+    setInterval(fcSendHeight, 1000);
+  }
 
 })();
 </script>
