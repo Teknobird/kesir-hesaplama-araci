@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="robots" content="noindex, nofollow">
 <title>Kesir Hesap Makinesi</title>
 <meta name="theme-color" content="#e12e2e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -36,11 +35,12 @@
     color:var(--ink);
     background:transparent;
     -webkit-font-smoothing:antialiased;
-    padding:14px;
+    padding:0;
   }
   .fc-widget{
-    max-width:640px;
-    margin:0 auto;
+    width:100%;
+    max-width:none;
+    margin:0;
     background:var(--paper);
     border:1px solid var(--border);
     border-radius:var(--radius);
@@ -454,7 +454,6 @@
     return '<div class="fc-static-frac"><span>'+f.n+'</span><span class="fc-bar"></span><span>'+f.d+'</span></div>';
   }
 
-  // Kesrin ondalık karşılığını hesaplar
   function isTerminating(d){
     d = Math.abs(d);
     while (d % 2 === 0) d/=2;
@@ -466,20 +465,11 @@
     if (f.d === 0) return '—';
     const val = f.n / f.d;
     if (isTerminating(f.d)){
+      // exact terminating decimal
       let s = val.toString();
       return s;
     }
     return val.toFixed(6).replace(/0+$/,'').replace(/\.$/,'') + '…';
-  }
-
-  /* ================= OTOMATİK ODAKLANMA / KAYDIRMA YARDIMCISI ================= */
-  // Sonuç kutusu açıldığında sayfayı yumuşak bir şekilde aşağı kaydırır.
-  function scrollToElement(el) {
-    setTimeout(() => {
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
-    }, 150); // Iframe yüksekliğinin güncellenmesini beklemek için kısa bir gecikme
   }
 
   /* ================= CALCULATE PANEL ================= */
@@ -568,7 +558,6 @@
     if (fracs.some(f => !f.d)){
       showError(errEl, 'Payda sıfır ya da boş olamaz.');
       fcSendHeight();
-      scrollToElement(errEl);
       return;
     }
 
@@ -592,9 +581,12 @@
     document.getElementById('stepsBox').classList.remove('show');
     document.getElementById('stepsArrow').textContent = '▾';
     resEl.classList.add('show');
-    
     fcSendHeight();
-    scrollToElement(resEl); // Sonuçlar göründüğünde aşağı kaydır
+
+    // Yeni Kaydırma Tetikleyicisi
+    if (inIframe) {
+      window.parent.postMessage({ type: 'fc-kesir-scroll' }, '*');
+    }
   });
 
   document.getElementById('stepsToggle').addEventListener('click', function(){
@@ -602,10 +594,11 @@
     const arrow = document.getElementById('stepsArrow');
     box.classList.toggle('show');
     arrow.textContent = box.classList.contains('show') ? '▴' : '▾';
-    
     fcSendHeight();
-    if (box.classList.contains('show')) {
-      scrollToElement(box); // Çözüm adımları açıldığında adımlara kaydır
+
+    // Çözüm adımları açıldığında otomatik aşağı kaydır
+    if (inIframe && box.classList.contains('show')) {
+      window.parent.postMessage({ type: 'fc-kesir-scroll' }, '*');
     }
   });
 
@@ -622,7 +615,6 @@
     if (!d || isNaN(n)){ 
       showError(errEl, 'Lütfen geçerli bir pay ve payda girin.'); 
       fcSendHeight();
-      scrollToElement(errEl);
       return; 
     }
 
@@ -632,9 +624,12 @@
     document.getElementById('simpGcd').textContent = g;
     document.getElementById('simpDecimal').textContent = toDecimalString(result);
     resEl.classList.add('show');
-    
     fcSendHeight();
-    scrollToElement(resEl); // Sonuçlar göründüğünde aşağı kaydır
+
+    // Yeni Kaydırma Tetikleyicisi
+    if (inIframe) {
+      window.parent.postMessage({ type: 'fc-kesir-scroll' }, '*');
+    }
   });
 
   /* ================= CONVERT PANEL ================= */
@@ -665,7 +660,6 @@
       if (!/^-?\d+(\.\d+)?$/.test(raw)){
         showError(errEl, 'Lütfen geçerli bir ondalık sayı girin (örn. 0.75).');
         fcSendHeight();
-        scrollToElement(errEl);
         return;
       }
       const neg = raw.startsWith('-');
@@ -677,25 +671,30 @@
       document.getElementById('convResultBox').innerHTML = fracHTML(result);
       document.getElementById('convNote').innerHTML = 'Karışık sayı: <b>'+toMixedString(result)+'</b>';
       resEl.classList.add('show');
-      
       fcSendHeight();
-      scrollToElement(resEl); // Sonuçlar göründüğünde aşağı kaydır
+
+      // Yeni Kaydırma Tetikleyicisi
+      if (inIframe) {
+        window.parent.postMessage({ type: 'fc-kesir-scroll' }, '*');
+      }
     } else {
       const n = parseInt(document.getElementById('convN').value, 10);
       const d = parseInt(document.getElementById('convD').value, 10);
       if (!d || isNaN(n)){ 
         showError(errEl, 'Lütfen geçerli bir pay ve payda girin.'); 
         fcSendHeight();
-        scrollToElement(errEl);
         return; 
       }
       const dec = toDecimalString(reduce({n,d}));
       document.getElementById('convResultBox').innerHTML = '<span style="font-size:26px;">'+dec+'</span>';
       document.getElementById('convNote').innerHTML = isTerminating(d) ? 'Bu kesir tam ondalık sayıya karşılık gelir.' : 'Bu kesir sonsuz/tekrarlayan ondalık bir sayıdır, yaklaşık değer gösterildi.';
       resEl.classList.add('show');
-      
       fcSendHeight();
-      scrollToElement(resEl); // Sonuçlar göründüğünde aşağı kaydır
+
+      // Yeni Kaydırma Tetikleyicisi
+      if (inIframe) {
+        window.parent.postMessage({ type: 'fc-kesir-scroll' }, '*');
+      }
     }
   });
 
@@ -715,30 +714,16 @@
   const inIframe = window.self !== window.top;
 
   function fcSendHeight(){
-    if (!inIframe) return;
-    
-    // Sayfanın içindeki tüm scrollbar'ları zorla devre dışı bırakır
-    document.body.style.overflow = 'hidden';
-    
-    // Widget boyutunu alıp 15px ekstra tolerans payı ile yüksekliği iletir
-    const height = widgetEl ? Math.ceil(widgetEl.getBoundingClientRect().height) : (document.body.scrollHeight || document.documentElement.scrollHeight);
-    
-    window.parent.postMessage({
-      type: 'resize-iframe',
-      height: height
-    }, '*');
+    if (!inIframe || !widgetEl) return;
+    const h = Math.ceil(widgetEl.getBoundingClientRect().height) + 28;
+    window.parent.postMessage({ type: 'fc-kesir-resize', height: h }, '*');
   }
 
-  if (inIframe) {
-    if ('ResizeObserver' in window && widgetEl) {
+  if (inIframe && widgetEl) {
+    if ('ResizeObserver' in window) {
       new ResizeObserver(fcSendHeight).observe(widgetEl);
-    } else {
-      const observer = new MutationObserver(fcSendHeight);
-      observer.observe(document.body, { attributes: true, childList: true, subtree: true });
     }
-    
     window.addEventListener('load', fcSendHeight);
-    window.addEventListener('resize', fcSendHeight);
     [100, 300, 600, 1200, 2000].forEach(ms => setTimeout(fcSendHeight, ms));
     setInterval(fcSendHeight, 1000);
   }
